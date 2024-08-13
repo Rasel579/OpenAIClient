@@ -15,4 +15,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Online AI CLient"
 include(":app")
-include(":app")

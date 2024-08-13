@@ -1,20 +1,24 @@
 package com.ai.onlineai
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.onlineai.ui.screens.Camera
+import com.ai.onlineai.ui.screens.NetViewModel
 import com.ai.onlineai.ui.theme.MyApplicationTheme
 import com.ai.onlineai.utils.requestCameraPermission
 import com.ai.onlineai.utils.startCamera
@@ -31,8 +35,10 @@ class MainActivity : ComponentActivity() {
         shouldShowCamera.value = it
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         requestCameraPermission()
         startCamera()
         setContent {
@@ -42,8 +48,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val marsViewModel: NetViewModel =
+                        viewModel(factory = NetViewModel.FACTORY)
+
                     if (shouldShowCamera.value){
-                        Camera(executor = cameraExecutor, onError = { Log.e("Camera Error", "Error") } )
+                        Camera(executor = cameraExecutor, marsViewModel, onError = { Log.e("Camera Error", "Error") } )
                     }
                 }
             }
@@ -65,6 +74,5 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GreetingPreview() {
     MyApplicationTheme {
-
     }
 }
