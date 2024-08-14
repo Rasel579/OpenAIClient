@@ -1,9 +1,8 @@
 package com.ai.onlineai.ui.screens
 
 import android.graphics.Bitmap
-import android.os.Build
 import android.util.Base64
-import androidx.annotation.RequiresApi
+import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -24,13 +23,13 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.ai.onlineai.models.NetModelResponse
+import com.ai.onlineai.models.NetRequest
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 
-@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun Camera(
     executor: Executor,
@@ -38,6 +37,9 @@ fun Camera(
     onError: (ImageCaptureException) -> Unit
 ) {
     val context = LocalContext.current
+    val state = remember {
+        viewModel.states
+    }
     var stringBitmap = ""
     val lensFacing = CameraSelector.LENS_FACING_FRONT
     val lifeCicleOwner = LocalLifecycleOwner.current
@@ -47,11 +49,32 @@ fun Camera(
         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
         .build()
     imageAnalysis.setAnalyzer(executor, ImageAnalysis.Analyzer { imageProxy ->
+
         val byteArrayOutputStream = ByteArrayOutputStream()
-        imageProxy.toBitmap().compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+        imageProxy.toBitmap().compress(Bitmap.CompressFormat.JPEG, 65, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
         stringBitmap = Base64.encodeToString(byteArray, Base64.URL_SAFE)
-        viewModel.detectObject(NetModelResponse(name = "test", imageByteArray = stringBitmap))
+        viewModel.detectObject(NetRequest(name = "test", imageByteArray = stringBitmap))
+
+        when (state.value) {
+            is AppState.Success<*> -> {
+                Log.e("SUCCSESS", "SUCCESS")
+                when ((state.value as AppState.Success<*>).data) {
+                    is NetModelResponse -> {
+                        previewView.overlay.clear()
+                        previewView.overlay.add(OverPreviewDrawable((state.value as AppState.Success<*>).data as NetModelResponse))
+                    }
+                }
+
+            }
+
+            else -> {
+                Log.e("FAILED SUCCSESS", "FAILED SUCCESS")
+            }
+        }
+
+
+        byteArrayOutputStream.close()
         imageProxy.close()
     })
 
@@ -90,10 +113,11 @@ fun Camera(
 
         preview.surfaceProvider = previewView.surfaceProvider
         previewView.scaleType = PreviewView.ScaleType.FILL_CENTER
-
         com.ai.onlineai.utils.MediaCodec.config()
     }
 
     AndroidView(factory = { previewView }, Modifier.fillMaxSize())
 
 }
+
+

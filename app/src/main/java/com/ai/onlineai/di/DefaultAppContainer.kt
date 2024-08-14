@@ -28,7 +28,7 @@ class DefaultAppContainer : AppContainer {
                 .newBuilder().apply {
                     addInterceptor(
                         HttpLoggingInterceptor().apply {
-                            level = HttpLoggingInterceptor.Level.BODY
+                            level = HttpLoggingInterceptor.Level.NONE
 
                         })
                 }.build()
